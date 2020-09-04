@@ -23,8 +23,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ControladorLogin cl;
     private Button btns[];
     private TextView contador;
+    private TextView txtRonda;
     private Handler handler;
     private static int tiempo;
+    private static int rondas;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,7 +47,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btns[2].setOnClickListener(this);
 
         contador = (TextView)findViewById(R.id.contador);
-
+        txtRonda = (TextView)findViewById(R.id.textView2);
+        handler = new Handler();
         /*
         Timer temp = new Timer();
         tiempo = 60;
@@ -69,34 +73,53 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void ControlTiempo(){
-        handler = new Handler();
 
         new Thread(new Runnable(){
             @Override
             public void run() {
-                tiempo = 60;
+                tiempo = 30;
                 boolean flag = true;
                 while(flag)
                 {
                     try {
-                        tiempo = tiempo>=0?tiempo-1:60;
-                        if(tiempo>=0)
+
+                        Thread.sleep(1000);
+
+                        if(tiempo--==0)
                         {
-                            Thread.sleep(1000);
+                            rondas--;
+                            flag = rondas>0;
+                            tiempo = flag?30:0;
                         }
-                        else{
-                            flag = false;
-                        }
+
                     } catch (InterruptedException ex) {
                         ex.printStackTrace();
                     }
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
+                            actualizarInterfaz(rondas);
                             contador.setText(""+tiempo);
                         }
                     });
                 }
+            }
+        }).start();
+    }
+
+    public void actualizarInterfaz(int valor){
+        final int actualizar_valor = valor;
+        new Thread(new Runnable(){
+            @Override
+            public void run() {
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        txtRonda.setText("Ronda 1 de "+actualizar_valor);
+                    }
+                });
+
             }
         }).start();
     }
@@ -108,21 +131,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch(view.getId())
         {
             case R.id.button:
-                System.out.println("Presiono el boton 1");
+                //System.out.println("Presiono el boton 1");
+                actualizarInterfaz(++rondas);
                 break;
             case R.id.button2:
-                Toast.makeText(getBaseContext(),"Mensaje de prueba",Toast.LENGTH_LONG).show();
+                actualizarInterfaz(rondas-1>=1?rondas--:1);
+                //Toast.makeText(getBaseContext(),"Mensaje de prueba",Toast.LENGTH_LONG).show();
                 break;
             case R.id.button3:
                 ControlTiempo();
-                final Snackbar make = Snackbar.make(view, "Presiono el boton 3", Snackbar.LENGTH_INDEFINITE);
+                /*final Snackbar make = Snackbar.make(view, "Presiono el boton 3", Snackbar.LENGTH_INDEFINITE);
                 make.setAction("boton", new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
                        make.dismiss(); 
                     }
                 });
-                make.show();
+                make.show();*/
                 break;
             default: System.out.println("Error valor invalido");
                     break;
