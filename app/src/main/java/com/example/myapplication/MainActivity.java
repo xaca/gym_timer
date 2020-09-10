@@ -27,7 +27,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Handler handler;
     private static int tiempo;
     private static int rondas;
-
+    private static int total_rondas;
+    private boolean control_hilo;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +50,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         contador = (TextView)findViewById(R.id.contador);
         txtRonda = (TextView)findViewById(R.id.textView2);
         handler = new Handler();
+        tiempo = 30;
+        rondas = total_rondas = 1;
         /*
         Timer temp = new Timer();
         tiempo = 60;
@@ -77,10 +80,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         new Thread(new Runnable(){
             @Override
             public void run() {
-                tiempo = 30;
                 boolean flag = true;
-                while(flag)
+                while(control_hilo && flag)
                 {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(rondas>0)
+                            {
+                                actualizarInterfaz(total_rondas-rondas+1,total_rondas);
+                            }
+                            contador.setText(""+tiempo);
+                        }
+                    });
+
                     try {
 
                         Thread.sleep(1000);
@@ -90,25 +103,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             rondas--;
                             flag = rondas>0;
                             tiempo = flag?30:0;
+                            control_hilo = flag;
+
+                            if(tiempo == 0)
+                            {
+                                tiempo = 30;
+                                rondas = total_rondas;
+                                actualizarInterfaz(rondas,rondas);
+                                actualizarTexto("Empezar");
+                                System.out.println(rondas);
+                            }
                         }
 
                     } catch (InterruptedException ex) {
                         ex.printStackTrace();
                     }
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            actualizarInterfaz(rondas);
-                            contador.setText(""+tiempo);
-                        }
-                    });
                 }
             }
         }).start();
     }
 
-    public void actualizarInterfaz(int valor){
-        final int actualizar_valor = valor;
+    public void actualizarInterfaz(final int ronda_actual, final int total_rondas){
+
         new Thread(new Runnable(){
             @Override
             public void run() {
@@ -116,7 +132,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        txtRonda.setText("Ronda 1 de "+actualizar_valor);
+                        txtRonda.setText("Ronda "+ronda_actual+" de "+total_rondas);
+                    }
+                });
+
+            }
+        }).start();
+    }
+
+    public void actualizarTexto(String texto){
+        final String temp = texto;
+        new Thread(new Runnable(){
+            @Override
+            public void run() {
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        btns[2].setText(temp);
                     }
                 });
 
@@ -132,14 +165,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         {
             case R.id.button:
                 //System.out.println("Presiono el boton 1");
-                actualizarInterfaz(++rondas);
+                actualizarInterfaz(1,++rondas);
+                total_rondas = rondas;
                 break;
             case R.id.button2:
-                actualizarInterfaz(rondas-1>=1?rondas--:1);
+                actualizarInterfaz(1,rondas-1>=1?--rondas:1);
+                total_rondas = rondas;
                 //Toast.makeText(getBaseContext(),"Mensaje de prueba",Toast.LENGTH_LONG).show();
                 break;
             case R.id.button3:
-                ControlTiempo();
+
+                if(!control_hilo)
+                {
+                    control_hilo = true;
+                    actualizarTexto("Pausar");
+                    ControlTiempo();
+                }
+                else
+                {
+                    control_hilo = false;
+                    actualizarTexto("Continuar");
+                }
                 /*final Snackbar make = Snackbar.make(view, "Presiono el boton 3", Snackbar.LENGTH_INDEFINITE);
                 make.setAction("boton", new View.OnClickListener() {
                     @Override
@@ -151,14 +197,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             default: System.out.println("Error valor invalido");
                     break;
-        }
-    }
-
-    public void ocultarBotones(){
-        for(int i=0;i<btns.length;i++)
-        {
-            //btns[i].
-            //...
         }
     }
 }
